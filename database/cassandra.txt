@@ -1,0 +1,31 @@
+echo "deb http://www.apache.org/dist/cassandra/debian 37x main" | \
+  sudo tee /etc/apt/sources.list.d/cassandra.list
+
+gpg --keyserver pgp.mit.edu --recv-keys 749D6EEC0353B12C
+gpg --export --armor 749D6EEC0353B12C | sudo apt-key add -
+
+sudo apt-get update && sudo apt-get install cassandra cassandra-tools
+
+sudo vi /etc/cassandra/cassandra.yaml
+hints_directory: /data/cassandra/hints
+data_file_directories:
+    - /data/cassandra/data
+commitlog_directory: /data/cassandra/commitlog
+saved_caches_directory: /data/cassandra/saved_caches
+
+sudo mkdir -p /data/cassandra/commitlog
+sudo mkdir -p /data/cassandra/data
+sudo mkdir -p /data/cassandra/hints
+sudo mkdir -p /data/cassandra/.oracle_jre_usage
+sudo mkdir -p /data/cassandra/saved_caches
+sudo chown -R cassandra:cassandra /data/cassandra/
+
+sudo service cassandra restart
+
+nodetool status
+
+cqlsh localhost
+> SELECT cluster_name, listen_address FROM system.local;
+
+sudo service cassandra stop
+

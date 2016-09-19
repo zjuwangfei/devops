@@ -1,0 +1,21 @@
+sudo pip install -U requests scrapy pymongo scrapy-mongodb service_identity lxml w3lib cssselect twisted beautifulsoup4 queuelib pyquery psycopg2 pytz
+
+scrapy startproject <some_name>
+
+scrapy crawl somespider -s JOBDIR=crawls/somespider-1
+
+# debug
+sudo apt-get install ipython
+scrapy shell <url>
+>>> sel.xpath("//h2/text()").extract()[0]
+>>> fetch("<url>")
+
+http://localhost:6080/crawler
+
+telnet localhost 6023
+>>> prefs()
+
+>>> from scrapy.utils.trackref import get_oldest
+>>> r = get_oldest('HtmlResponse')
+>>> r.url
+

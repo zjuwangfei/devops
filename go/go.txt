@@ -1,0 +1,29 @@
+#manual install
+tar xzf go1.7.linux-amd64.tar.gz
+sudo mv go /opt/go-1.7.0
+sudo chown -R root:root /opt/go-1.7.0
+
+sudo vi /etc/profile.d/go.sh
+export GOROOT=/opt/go-1.7.0
+export PATH=$GOROOT/bin:$PATH
+
+source /etc/profile.d/go.sh
+
+vi ~/.bash_profile
+export GOPATH=$HOME/workspace/go
+export PATH=$GOPATH/bin:$PATH
+
+source ~/.bash_profile
+
+vi ~/.bashrc
+[[ -f $HOME/.bash_profile ]] && . $HOME/.bash_profile
+
+#package install
+sudo add-apt-repository ppa:ubuntu-lxc/lxd-stable
+sudo apt-get update && sudo apt-get install golang
+
+#dependency manager
+go get -u github.com/Masterminds/glide
+
+go list -e -json github.com/labstack/echo
+

@@ -1,0 +1,99 @@
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+
+echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse" | \
+sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list
+
+sudo apt-get update && sudo apt-get install mongodb-org
+
+sudo service mongod stop
+
+sudo vi /etc/mongod.conf
+```
+storage:
+  dbPath: /data/mongodb/db
+systemLog:
+  path: /data/mongodb/log/mongod.log
+```
+
+sudo mkdir -p /data/mongodb/log/
+sudo mkdir -p /data/mongodb/db/
+sudo chown -R mongodb:mongodb /data/mongodb/
+
+sudo cp -ra /var/lib/mongodb/* /data/mongodb/db/
+sudo cp -ra /var/log/mongodb/* /data/mongodb/log/
+
+sudo service mongod restart
+
+sudo rm -r /var/log/mongodb
+sudo rm -r /var/lib/mongodb
+
+netstat -tln
+sudo lsof -i:27017
+tail -f /data/mongodb/log/mongod.log
+
+sudo sysv-rc-conf mongod
+sudo update-rc.d mongod defaults
+
+mongo
+> use admin
+> db.createUser("<username>", "<password>")
+> db.auth("<username>", "<password>")
+> db.system.users.find()
+> use <db_name>
+> db.createUser(
+   {
+     user: "accountUser",
+     pwd: "password",
+     roles: [ "readWrite", "dbAdmin" ]
+   }
+)
+> show dbs
+> use <db_name>
+> db.dropDatabase()
+> show collections
+> db.<collection_name>.drop()
+> db.<collection_name>.find().limit(5)
+> db.<collection_name>.find({"aliases": {$exists: true}})
+> db.<collection_name>.update({"_id": ObjectId("<oid>"), { }...})
+> db.<collection_name>.update({}, {$rename: {"<field_name>": "<new_field_name>"}}, {multi: true})
+> db.<collection_name>.update({}, {$unset: {<field_name>: 1}}, false, true)
+> db.<collection_name>.remove({})
+> db.fs.chunks.count()
+> db.fs.chunks.findOne()
+> db.fs.files.find({"_id": ObjectId("<oid>")}).sort({"_id": -1})
+> db.fs.chunks.find({files_id: ObjectId("<oid>")})
+> db.<collection_name>.find({"name": /.*name.*/})
+> db.<collection_name>.find({"company_types":{$in:["listed","fund"]}})
+> db.user.aggregate([
+    { $group: {
+      _id: { name: "$name",company:"$company_id" },
+      uniqueIds: { $addToSet: "$_id" },
+      count: { $sum: 1 } 
+    } }, 
+    { $match: { 
+      count: { $gte: 2 } 
+    } },
+    { $sort : { count : -1} },
+    { $limit : 10 }
+  ]);
+
+mongo --username "prodManager" --password "cleartextPassword" --authenticationDatabase "products"
+
+sudo service mongod stop
+sudo mongodump --dbpath /var/lib/mongodb --out <some_path>
+mongorestore <some_path>
+
+sudo mkdir -p /data/backup/mongodb
+
+vim /data/backup/mongodb.sh
+#!/bin/sh
+DATE=`date +%Y%m%d`
+FILE_PATH="/data/backup/mongodb/$DATE"
+
+mongodump --db <db_name> -o $FILE_PATH
+
+sudo vim /etc/crontab
+0 3 * * *  root /data/backup/mongodb.sh
+
+sudo service cron restart
+

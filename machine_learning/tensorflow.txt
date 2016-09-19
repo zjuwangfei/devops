@@ -1,0 +1,26 @@
+sudo apt-get install python-pip python-dev
+
+sudo pip install --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.10.0-cp27-none-linux_x86_64.whl
+
+python -c 'import os; import inspect; import tensorflow; print(os.path.dirname(inspect.getfile(tensorflow)))'
+
+sudo update-alternatives --display libcudnn
+sudo update-alternatives --config libcudnn
+
+python -m tensorflow.models.image.mnist.convolutional
+
+cat /usr/local/cuda/include/cudnn.h | grep CUDNN_MAJOR -A 2
+
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update && sudo apt-get install oracle-java8-installer
+
+echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | sudo apt-key add -
+sudo apt-get update && sudo apt-get install bazel
+
+sudo apt-get install build-essential pkg-config curl git swig zip unzip \
+  g++ zlib1g-dev libfreetype6-dev libpng12-dev libzmq3-dev \
+  software-properties-common python-dev python-numpy python-pip python-wheel
+
+sudo pip install grpcio
+

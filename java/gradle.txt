@@ -1,0 +1,37 @@
+unzip gradle-2.13-all.zip
+sudo mv gradle-2.13 /opt/gradle-2.13
+sudo chown -R root:root /opt/gradle-2.13
+
+sudo vi /etc/profile.d/gradle.sh
+export GRADLE_HOME=/opt/gradle-2.13
+export PATH=$GRADLE_HOME/bin:$PATH
+
+source /etc/profile.d/gradle.sh
+
+touch ~/.gradle/gradle.properties && echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
+
+gradle tasks
+gradle build
+gradle wrapper
+
+./gradlew tasks
+./gradlew build
+./gradlew run
+
+vi build.gradle
+
+```
+apply plugin: 'maven'
+
+repositories {
+    maven {
+        url "http://localhost:8081/nexus/content/groups/public"
+        credentials {
+            username '<userName>'
+            password '<password>'
+        }
+    }
+    mavenLocal()
+    mavenCentral()
+}
+```

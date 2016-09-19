@@ -1,0 +1,23 @@
+PROTOBUF_VERSION=3.0.0
+unzip protoc-$PROTOBUF_VERSION-linux-x86_64.zip -d protobuf-$PROTOBUF_VERSION
+mv protobuf-$PROTOBUF_VERSION $HOME/software/protobuf-$PROTOBUF_VERSION
+
+vi ~/.bash_profile
+export PROTOBUF_HOME=$HOME/software/protobuf-3.0.0
+export PATH=$PROTOBUF_HOME/bin:$PATH
+
+source ~/.bash_profile
+
+vi ~/.bash_profile
+export GOPATH=$HOME/workspace/go
+export PATH=$GOPATH/bin:$PATH
+
+go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+
+protoc --go_out=. *.proto
+protoc --go_out=plugins=grpc:. *.proto
+protoc --go_out=plugins=grpc,import_path=mypackage:. *.proto
+
+protoc --java_out=src/main/java -I../src \
+     ../src/google/protobuf/descriptor.proto
+

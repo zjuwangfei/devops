@@ -1,0 +1,70 @@
+lspci | grep -i nvidia
+
+sudo apt-get install linux-headers-$(uname -r)
+
+#local
+sudo dpkg -i cuda-repo-ubuntu1404-7-5-local_7.5-18_amd64.deb
+
+#network
+CUDA_REPO_PKG=cuda-repo-ubuntu1404_7.5-18_amd64.deb
+wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG
+sudo dpkg -i $CUDA_REPO_PKG
+
+sudo apt-get update && sudo apt-get install cuda
+
+sudo vi /usr/local/cuda/libnvvp/nvvp.ini
+@user.home/workspace/nvidia/nvvp
+
+sudo bash -c "cat > /etc/profile.d/cuda.sh" <<"EOF"
+export CUDA_HOME=/usr/local/cuda
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+EOF
+
+source /etc/profile.d/cuda.sh
+
+cd ~/workspace/nvidia/cuda/
+cuda-install-samples-7.5.sh .
+cd NVIDIA_CUDA-7.5_Samples/
+make
+cd bin/x86_64/linux/release/
+./deviceQuery
+./nbody
+
+nvidia-smi
+
+ML_REPO_PKG=nvidia-machine-learning-repo_4.0-2_amd64.deb
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/$ML_REPO_PKG
+sudo dpkg -i $ML_REPO_PKG
+
+sudo apt-get update && sudo apt-get install libcudnn4 libcudnn4-dev libcudnn5 libcudnn5-dev
+
+find /usr/ -iname '*cudnn*'
+
+sudo ln -s /usr/include/cudnn.h /usr/local/cuda/include/cudnn.h
+sudo ln -s /usr/lib/x86_64-linux-gnu/libcudnn* /usr/local/cuda/lib64/
+sudo chmod a+r /usr/local/cuda/include/cudnn.h
+sudo chmod a+r /usr/local/cuda/lib64/libcudnn*
+
+sudo update-alternatives --set libcudnn /usr/include/cudnn_v4.h
+sudo update-alternatives --set libcudnn /usr/include/x86_64-linux-gnu/cudnn_v5.h
+
+sudo update-alternatives --display libcudnn
+sudo update-alternatives --config libcudnn
+
+sudo apt-get install digits
+
+# http://localhost/
+# http://localhost:34448/
+
+sudo dpkg-reconfigure digits
+
+cd /usr/share/digits
+sudo python -m digits.config.edit -v
+sudo stop nvidia-digits-server
+sudo start nvidia-digits-server
+
+/usr/share/digits/tools/download_data/main.py mnist /data/mnist
+/usr/share/digits/tools/download_data/main.py cifar10 /data/cifar10
+/usr/share/digits/tools/download_data/main.py cifar100 /data/cifar100
+

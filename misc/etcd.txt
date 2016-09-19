@@ -1,0 +1,19 @@
+# https://github.com/coreos/etcd/releases
+
+tar xzvf etcd-v3.0.6-linux-amd64.tar.gz
+mv etcd-v3.0.6-linux-amd64 $HOME/software/etcd-v3.0.6
+
+vi ~/.bash_profile
+export ETCD_HOME=$HOME/software/etcd-v3.0.6
+export PATH=$ETCD_HOME:$PATH
+export ETCD_DATA_DIR=/data/etcd
+
+source ~/.bash_profile
+
+mkdir -p /data/etcd
+
+cd $ETCD_HOME && etcd --experimental-v3demo=true --experimental-gRPC-addr "127.0.0.1:2378"
+
+ETCDCTL_API=3 etcdctl set foo "bar"
+ETCDCTL_API=3 etcdctl get foo
+

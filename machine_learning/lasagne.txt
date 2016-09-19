@@ -1,0 +1,10 @@
+sudo apt-get install -y gcc g++ gfortran build-essential git wget libopenblas-dev \
+  python-dev python-pip python-nose python-numpy python-scipy
+
+sudo pip install Lasagne
+
+mkdir -p ~/download/mnist
+cd ~/download/mnist
+wget https://github.com/Lasagne/Lasagne/raw/master/examples/mnist.py
+python mnist.py mlp 5
+

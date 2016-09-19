@@ -1,0 +1,30 @@
+sudo apt-get install build-essential libxml2-dev libxslt1-dev libffi-dev libssl-dev
+sudo apt-get install python python-dev ipython
+
+curl -sL https://bootstrap.pypa.io/get-pip.py | sudo python
+sudo pip install --upgrade pip
+
+mkdir ~/.pip
+
+vi ~/.pip/pip.conf
+[global]
+index-url = http://mirrors.aliyun.com/pypi/simple
+
+vi ~/.pydistutils.cfg
+[easy_install]
+index_url = http://mirrors.aliyun.com/pypi/simple
+
+pip help
+pip list --outdated
+pip search requests
+sudo pip install -U <package_name>
+pip show <package_name>
+
+ls /usr/lib/python2.7/dist-packages/
+ls /usr/local/lib/python2.7/dist-packages/
+
+sudo pip install -U virtualenv
+virtualenv <env_dir>
+source <env_dir>/bin/activate
+deactivate
+

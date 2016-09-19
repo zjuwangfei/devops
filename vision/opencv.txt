@@ -1,0 +1,22 @@
+sudo apt-get install libopencv-dev python-opencv
+
+ls /usr/local/share/OpenCV/java
+
+sudo sh -c 'echo "/usr/local/share/OpenCV/java" > /etc/ld.so.conf.d/opencv.conf'
+sudo ldconfig
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/share/OpenCV/java
+
+cd /path/to/some/java/project
+cp /usr/local/share/OpenCV/lbpcascades/lbpcascade_frontalface.xml src/main/resources/opencv
+
+#pom.xml
+<dependency>
+    <groupId>opencv</groupId>
+    <artifactId>opencv</artifactId>
+    <version>2.4.5</version>
+</dependency>
+
+mvn clean install -Dmaven.test.skip=true -U
+java -cp target/upsmart-ocr-0.5-SNAPSHOT.jar upsmart.ocr.launcher.OpenCVLauncher -Djava.library.path=/usr/local/share/OpenCV/java
+

@@ -1,0 +1,51 @@
+tar xzf kafka_2.11-0.10.0.1.tgz
+mv kafka_2.11-0.10.0.1 ~/software/kafka-0.10.0.1
+
+vi ~/.bash_profile
+export KAFKA_HOME=$HOME/software/kafka-0.10.0.1
+export PATH=$KAFKA_HOME/bin:$PATH
+
+source ~/.bash_profile
+
+vi $KAFKA_HOME/config/server.properties
+log.dirs=/data/kafka/log
+zookeeper.connect=<host>:2181
+
+$ZOOKEEPER_HOME/bin/zkServer.sh start
+$KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties &
+
+$KAFKA_HOME/bin/kafka-topics.sh --create --zookeeper <host>:2181 --replication-factor 1 --partitions 1 --topic test
+$KAFKA_HOME/bin/kafka-topics.sh --describe --zookeeper <host>:2181 --topic test
+$KAFKA_HOME/bin/kafka-topics.sh --list --zookeeper <host>:2181
+
+$KAFKA_HOME/bin/kafka-console-producer.sh --broker-list <host>:9092 --topic test 
+$KAFKA_HOME/bin/kafka-console-consumer.sh --zookeeper <host>:2181 --topic test --from-beginning
+
+# multi-broker cluster
+cp $KAFKA_HOME/config/server.properties $KAFKA_HOME/config/server-1.properties
+cp $KAFKA_HOME/config/server.properties $KAFKA_HOME/config/server-2.properties
+
+vi $KAFKA_HOME/config/server-1.properties
+broker.id=1
+listeners=PLAINTEXT://:9093
+log.dir=/data/kafka/log/1
+
+vi $KAFKA_HOME/config/server-1.properties
+broker.id=2
+listeners=PLAINTEXT://:9094
+log.dir=/data/kafka/log/2
+
+$KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server-1.properties &
+$KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server-2.properties &
+
+$KAFKA_HOME/bin/kafka-topics.sh --create --zookeeper <host>:2181 --replication-factor 3 --partitions 1 --topic test
+$KAFKA_HOME/bin/kafka-topics.sh --describe --zookeeper <host>:2181 --topic test
+
+$KAFKA_HOME/bin/kafka-console-producer.sh --broker-list <host>:9092 --topic test
+$KAFKA_HOME/bin/kafka-console-consumer.sh --zookeeper <host>:2181 --from-beginning --topic test
+
+pkill -9 -f $KAFKA_HOME/server-1.properties
+$KAFKA_HOME/bin/kafka-topics.sh --describe --zookeeper <host>:2181 --topic test
+
+ps aux | grep kafka | awk '{print $2}' | xargs kill -9
+

@@ -1,0 +1,165 @@
+# https://gitlab.com/gitlab-org/gitlab-ce/blob/master/doc/install/installation.md
+
+sudo apt-get install -y vim
+sudo update-alternatives --set editor /usr/bin/vim.basic
+
+sudo apt-get install -y build-essential zlib1g-dev \
+libyaml-dev libssl-dev libgdbm-dev libreadline-dev \
+libncurses5-dev libffi-dev curl openssh-server redis-server \
+checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev \
+libicu-dev logrotate python-docutils pkg-config cmake nodejs \
+git-core postfix
+
+sudo adduser --disabled-login --gecos 'GitLab' git
+
+curl -O --progress https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz
+echo '5817fa4b2252afdb02e11e8b9dc1d9173ef3bd5a  go1.5.linux-amd64.tar.gz' | shasum -c - && \
+  sudo tar -C /usr/local -xzf go1.5.linux-amd64.tar.gz
+sudo ln -sf /usr/local/go/bin/{go,godoc,gofmt} /usr/local/bin/
+rm go1.5.linux-amd64.tar.gz
+
+sudo apt-get install -y postgresql postgresql-client libpq-dev
+
+sudo -u postgres -i
+$ createuser git -s --password
+$ createdb -E utf8 -O git gitlab
+$ exit
+
+sudo -u postgres psql
+postgres=# \l
+postgres=# ALTER USER git WITH PASSWORD '<password>';
+
+sudo -u git -H psql -d gitlab
+gitlab> \q
+
+sudo cp /etc/redis/redis.conf /etc/redis/redis.conf.orig
+sudo sed 's/^port .*/port 0/' /etc/redis/redis.conf.orig | sudo tee /etc/redis/redis.conf
+echo 'unixsocket /var/run/redis/redis.sock' | sudo tee -a /etc/redis/redis.conf
+echo 'unixsocketperm 770' | sudo tee -a /etc/redis/redis.conf
+sudo mkdir /var/run/redis
+sudo chown redis:redis /var/run/redis
+sudo chmod 755 /var/run/redis
+if [ -d /etc/tmpfiles.d ]; then
+  echo 'd  /var/run/redis  0755  redis  redis  10d  -' | sudo tee -a /etc/tmpfiles.d/redis.conf
+fi
+sudo service redis-server restart
+sudo usermod -aG redis git
+
+cd /home/git
+sudo -u git -H git clone https://gitlab.com/gitlab-org/gitlab-ce.git -b 8-0-stable gitlab
+
+cd /home/git/gitlab
+sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml
+
+sudo -u git -H editor config/gitlab.yml
+host: gitlab.example.com
+
+sudo -u git -H cp config/secrets.yml.example config/secrets.yml
+sudo -u git -H chmod 0600 config/secrets.yml
+
+sudo chown -R git log/
+sudo chown -R git tmp/
+sudo chmod -R u+rwX,go-w log/
+sudo chmod -R u+rwX tmp/
+
+sudo -u git -H mkdir tmp/pids/
+sudo chmod -R u+rwX tmp/pids/
+
+sudo -u git -H mkdir tmp/sockets/
+sudo chmod -R u+rwX tmp/sockets/
+
+sudo -u git -H mkdir public/uploads
+sudo chmod -R u+rwX public/uploads
+
+sudo -u git -H mkdir public/builds
+sudo chmod -R u+rwX public/builds
+
+sudo -u git -H cp config/unicorn.rb.example config/unicorn.rb
+
+sudo -u git -H editor config/unicorn.rb
+listen "127.0.0.1:8080", :tcp_nopush => true
+
+sudo -u git -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
+
+sudo -u git -H git config --global core.autocrlf input
+
+sudo -u git -H cp config/resque.yml.example config/resque.yml
+
+sudo -u git -H editor config/resque.yml
+production: unix:/var/run/redis/redis.sock
+
+sudo -u git cp config/database.yml.postgresql config/database.yml
+
+sudo -u git -H editor config/database.yml
+production:
+  database: gitlab
+  password: "<password>"
+
+sudo -u git -H chmod o-rwx config/database.yml
+
+sudo -u git -H editor Gemfile
+source "https://ruby.taobao.org"
+
+sudo -u git -H bundle install --deployment --without development test mysql aws kerberos
+
+sudo -u git -H bundle exec rake gitlab:shell:install[v2.6.5] REDIS_URL=unix:/var/run/redis/redis.sock RAILS_ENV=production
+
+sudo -u git -H editor /home/git/gitlab-shell/config.yml
+gitlab_url: "http://gitlab.example.com/"
+
+cd /home/git
+sudo -u git -H git clone https://gitlab.com/gitlab-org/gitlab-git-http-server.git
+cd gitlab-git-http-server
+sudo -u git -H make
+
+cd /home/git/gitlab
+sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production
+
+sudo cp lib/support/init.d/gitlab /etc/init.d/gitlab
+sudo cp lib/support/init.d/gitlab.default.example /etc/default/gitlab
+
+sudo update-rc.d gitlab defaults 21
+
+sudo cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab
+
+sudo -u git -H bundle exec rake gitlab:env:info RAILS_ENV=production
+sudo -u git -H bundle exec rake assets:precompile RAILS_ENV=production
+
+sudo service gitlab restart
+
+sudo cp lib/support/nginx/gitlab /etc/nginx/sites-available/gitlab
+sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
+
+sudo editor /etc/nginx/sites-available/gitlab
+listen *:80;
+server_name gitlab.example.com;
+
+sudo service nginx restart
+
+sudo chmod -R ug+rwX,o-rwx /home/git/repositories/
+sudo chmod -R ug-s /home/git/repositories/
+find /home/git/repositories/ -type d -print0 | sudo xargs -0 chmod g+s
+sudo chmod 0750 /home/git/gitlab/public/uploads
+
+sudo -u git -H bundle exec rake gitlab:check RAILS_ENV=production
+
+http://gitlab.example.com/
+#username: root
+#password: 5iveL!fe
+
+# https://gitlab.com/gitlab-org/gitlab-ce/blob/master/doc/update/upgrader.md
+
+cd /home/git/gitlab; \
+sudo -u git -H bundle exec rake gitlab:backup:create RAILS_ENV=production; \
+sudo service gitlab stop; \
+if [ -f bin/upgrade.rb ]; then sudo -u git -H ruby bin/upgrade.rb -y; else sudo -u git -H ruby script/upgrade.rb -y; fi; \
+cd /home/git/gitlab-shell; \
+sudo -u git -H git fetch; \
+sudo -u git -H git checkout v`cat /home/git/gitlab/GITLAB_SHELL_VERSION`; \
+cd /home/git/gitlab; \
+sudo service gitlab start; \
+sudo service nginx restart; sudo -u git -H bundle exec rake gitlab:check RAILS_ENV=production
+
+sudo -u git -H /home/git/gitlab-shell//bin/create-hooks
+sudo -u git -H bundle exec rake db:migrate RAILS_ENV=production
+

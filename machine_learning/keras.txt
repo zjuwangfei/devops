@@ -1,0 +1,4 @@
+sudo pip install keras
+
+KERAS_BACKEND=tensorflow python -c "from keras import backend; print backend._BACKEND"
+

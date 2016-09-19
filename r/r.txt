@@ -1,0 +1,18 @@
+# ubuntu
+sudo bash -c 'echo "deb http://mirrors.tuna.tsinghua.edu.cn/CRAN/bin/linux/ubuntu trusty/" > /etc/apt/sources.list.d/r.list'
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+sudo apt-get update && sudo apt-get install r-base r-base-dev r-recommended
+
+sudo vi /usr/lib/R/etc/Renviron
+R_LIBS_USER=${R_LIBS_USER-'/data/r/library/3.3'}
+
+# osx
+brew install homebrew/science/r
+brew install Caskroom/cask/rstudio
+
+$ R
+> install.packages("<package_name>")
+> help("<function_name>")
+> args("<function_name>")
+> example("<function_name>")
+
