@@ -1,0 +1,6 @@
+npm install -g electron electron-compile electron-builder electron-packager
+
+electron-packager . --platform=linux --arch=x64
+
+build --linux deb --x64
+
